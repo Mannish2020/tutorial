@@ -3,26 +3,239 @@ title: "Intro to dplyr"
 author: "Manish Gyawali"
 date: 2020-12-01T21:13:14-05:00
 categories: ["R"]
-tags: ["R Markdown", "plot", "regression"]
+tags: ["R Markdown", "tidyverse", "dplyr","tidyr"]
+
 ---
 
 <script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
 
 
-<pre class="r"><code>library(dplyr)
-## 
-## Attaching package: &#39;dplyr&#39;
-## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag
-## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>head(mtcars)
-##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb
-## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
-## Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4
-## Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1
-## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
-## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
-## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1</code></pre>
+<p>Tidyverse is a ‘meta package’ in R that contains a set of packages that have a similar philosophy and can be used together.</p>
+<p>The most important package is <em>dplyr</em>, which is used to transform data frames to useable formats</p>
+<p>Other important packages are:</p>
+<p><em>purrr</em> for <strong>functional programming</strong> (it provides important alternatives to lapply)</p>
+<p><em>tidyr</em> for converting data frames into so called <em>tidy</em> structures. We will see one such structure.</p>
+<p><em>ggplot2</em> for graphics</p>
+<p>We will focus here on dplyr and tidyr:</p>
+<p>Let’s get the libraries. We won’t get the full tidyverse meta-package, just the two we want which are inside it.</p>
+<pre class="r"><code>library(dplyr);library(tidyr)</code></pre>
+<div id="dplyr" class="section level2">
+<h2>dplyr</h2>
+<div id="subsetting-data-frames" class="section level3">
+<h3>Subsetting data frames:</h3>
+<p>In base R, we know two ways to get subsets of data frames:</p>
+<p>Indirectly, using <em>which()</em>. Remember that this command gives you the index numbers where the command is true.</p>
+<p>For example, the following line gives you all those index numbers for which it is true that value of <em>mpg</em> in the <strong>mtcars</strong> dataset is greater than the average value in the dataset.</p>
+<pre class="r"><code>which(mtcars$mpg &gt; mean(mtcars$mpg))
+ [1]  1  2  3  4  8  9 18 19 20 21 26 27 28 32</code></pre>
+<p>To get the actual data set where this is true, we need to put this condition inside the data set itself. The last comma indicates that we want the <em>rows</em> where this condition is true.</p>
+<pre class="r"><code>mtcars[which(mtcars$mpg &gt; mean(mtcars$mpg)),]
+                mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+Mazda RX4      21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
+Mazda RX4 Wag  21.0   6 160.0 110 3.90 2.875 17.02  0  1    4    4
+Datsun 710     22.8   4 108.0  93 3.85 2.320 18.61  1  1    4    1
+Hornet 4 Drive 21.4   6 258.0 110 3.08 3.215 19.44  1  0    3    1
+Merc 240D      24.4   4 146.7  62 3.69 3.190 20.00  1  0    4    2
+Merc 230       22.8   4 140.8  95 3.92 3.150 22.90  1  0    4    2
+Fiat 128       32.4   4  78.7  66 4.08 2.200 19.47  1  1    4    1
+Honda Civic    30.4   4  75.7  52 4.93 1.615 18.52  1  1    4    2
+Toyota Corolla 33.9   4  71.1  65 4.22 1.835 19.90  1  1    4    1
+Toyota Corona  21.5   4 120.1  97 3.70 2.465 20.01  1  0    3    1
+Fiat X1-9      27.3   4  79.0  66 4.08 1.935 18.90  1  1    4    1
+Porsche 914-2  26.0   4 120.3  91 4.43 2.140 16.70  0  1    5    2
+Lotus Europa   30.4   4  95.1 113 3.77 1.513 16.90  1  1    5    2
+Volvo 142E     21.4   4 121.0 109 4.11 2.780 18.60  1  1    4    2</code></pre>
+<p>The second method is <em>subset()</em> and this is more direct. It can be done in one step.</p>
+<pre class="r"><code>subset(mtcars, mpg &gt; mean(mpg))
+                mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+Mazda RX4      21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
+Mazda RX4 Wag  21.0   6 160.0 110 3.90 2.875 17.02  0  1    4    4
+Datsun 710     22.8   4 108.0  93 3.85 2.320 18.61  1  1    4    1
+Hornet 4 Drive 21.4   6 258.0 110 3.08 3.215 19.44  1  0    3    1
+Merc 240D      24.4   4 146.7  62 3.69 3.190 20.00  1  0    4    2
+Merc 230       22.8   4 140.8  95 3.92 3.150 22.90  1  0    4    2
+Fiat 128       32.4   4  78.7  66 4.08 2.200 19.47  1  1    4    1
+Honda Civic    30.4   4  75.7  52 4.93 1.615 18.52  1  1    4    2
+Toyota Corolla 33.9   4  71.1  65 4.22 1.835 19.90  1  1    4    1
+Toyota Corona  21.5   4 120.1  97 3.70 2.465 20.01  1  0    3    1
+Fiat X1-9      27.3   4  79.0  66 4.08 1.935 18.90  1  1    4    1
+Porsche 914-2  26.0   4 120.3  91 4.43 2.140 16.70  0  1    5    2
+Lotus Europa   30.4   4  95.1 113 3.77 1.513 16.90  1  1    5    2
+Volvo 142E     21.4   4 121.0 109 4.11 2.780 18.60  1  1    4    2</code></pre>
+<p>With <em>subset()</em>, you can also get the <strong>columns</strong> that you want: suppose we only want <em>mpg</em>, <em>hp</em> and <em>drat</em>.</p>
+<p>Use <strong>select</strong> to select the columns that you want.</p>
+<pre class="r"><code>subset(mtcars, mpg &gt; mean(mpg),
+       select = c(mpg,hp,drat)) %&gt;%
+  head()
+                mpg  hp drat
+Mazda RX4      21.0 110 3.90
+Mazda RX4 Wag  21.0 110 3.90
+Datsun 710     22.8  93 3.85
+Hornet 4 Drive 21.4 110 3.08
+Merc 240D      24.4  62 3.69
+Merc 230       22.8  95 3.92</code></pre>
+<p>With <em>subset()</em>, you do not have to write mtcars$… inside the command. Just write the name of the variable that you are interested in. That attribute is called <strong>data masking</strong> and is very common in dplyr().</p>
+</div>
+<div id="filter-and-select" class="section level3">
+<h3>filter() and select()</h3>
+<p>We can use filter() and select(), which are part of dplyr, in place of select.</p>
+<p>Why not use subset? Because, although it is very easy to use, you cannot use piping properly with it.</p>
+<p>subset() is part of base R, and piping doesn’t work very well with base R. Of course, you can use piping with base R, and we already did here.</p>
+<p>Now let’s see how we can use the same type of this (as with subset()) with filter() and select() from dplyr:</p>
+<p>filter() obtains the rows of interest. It is similar to the first part of subset().</p>
+<p>Note that we used piping.</p>
+<pre class="r"><code>mtcars %&gt;%
+  filter(mpg &gt; mean(mpg))
+                mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+Mazda RX4      21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
+Mazda RX4 Wag  21.0   6 160.0 110 3.90 2.875 17.02  0  1    4    4
+Datsun 710     22.8   4 108.0  93 3.85 2.320 18.61  1  1    4    1
+Hornet 4 Drive 21.4   6 258.0 110 3.08 3.215 19.44  1  0    3    1
+Merc 240D      24.4   4 146.7  62 3.69 3.190 20.00  1  0    4    2
+Merc 230       22.8   4 140.8  95 3.92 3.150 22.90  1  0    4    2
+Fiat 128       32.4   4  78.7  66 4.08 2.200 19.47  1  1    4    1
+Honda Civic    30.4   4  75.7  52 4.93 1.615 18.52  1  1    4    2
+Toyota Corolla 33.9   4  71.1  65 4.22 1.835 19.90  1  1    4    1
+Toyota Corona  21.5   4 120.1  97 3.70 2.465 20.01  1  0    3    1
+Fiat X1-9      27.3   4  79.0  66 4.08 1.935 18.90  1  1    4    1
+Porsche 914-2  26.0   4 120.3  91 4.43 2.140 16.70  0  1    5    2
+Lotus Europa   30.4   4  95.1 113 3.77 1.513 16.90  1  1    5    2
+Volvo 142E     21.4   4 121.0 109 4.11 2.780 18.60  1  1    4    2</code></pre>
+<p>Now to get columns (the second part of subset())</p>
+<pre class="r"><code>mtcars %&gt;%
+  select(mpg,hp,drat) %&gt;%
+  head()
+                   mpg  hp drat
+Mazda RX4         21.0 110 3.90
+Mazda RX4 Wag     21.0 110 3.90
+Datsun 710        22.8  93 3.85
+Hornet 4 Drive    21.4 110 3.08
+Hornet Sportabout 18.7 175 3.15
+Valiant           18.1 105 2.76</code></pre>
+<p>You can combine filter() and select() in any way. Remember to use identical(x,y) to check if two data frames x and y are <em>exactly</em> equal.</p>
+<pre class="r"><code>identical(
+  # we select columns first and then filter the rows
+  mtcars %&gt;%
+  select(mpg,hp,drat) %&gt;%
+    filter(mpg &gt; mean(mpg)),
+  # we filter rows first and then select the columns
+  mtcars %&gt;%
+    filter(mpg &gt; mean(mpg)) %&gt;%
+    select(mpg,hp,drat)
+)
+[1] TRUE</code></pre>
+</div>
+<div id="group_by" class="section level3">
+<h3>group_by()</h3>
+<p>With this command, we can do operations by ‘group’. For example, suppose we have a data set of country characteristics and we want to group by country:</p>
+<pre class="r"><code># This &#39;gapminder&#39; package set contains a data set called &#39;gapminder&#39; that has country characteristics. Get this data set and store it in the  variable &#39;gap&#39;
+gap &lt;- gapminder::gapminder
+gap &lt;- gap %&gt;% group_by(country)</code></pre>
+<p>If you look at the structure of <em>gap</em> it won’t look that different. Except there you are told that it is grouped.</p>
+<pre class="r"><code># glimpse() is the dplyr equivalent of str() and the main advantage is that it gives tidier format
+glimpse(gap)
+Rows: 1,704
+Columns: 6
+Groups: country [142]
+$ country   &lt;fct&gt; &quot;Afghanistan&quot;, &quot;Afghanistan&quot;, &quot;Afghanistan&quot;, &quot;Afghanistan&quot;, ~
+$ continent &lt;fct&gt; Asia, Asia, Asia, Asia, Asia, Asia, Asia, Asia, Asia, Asia, ~
+$ year      &lt;int&gt; 1952, 1957, 1962, 1967, 1972, 1977, 1982, 1987, 1992, 1997, ~
+$ lifeExp   &lt;dbl&gt; 28.80, 30.33, 32.00, 34.02, 36.09, 38.44, 39.85, 40.82, 41.6~
+$ pop       &lt;int&gt; 8425333, 9240934, 10267083, 11537966, 13079460, 14880372, 12~
+$ gdpPercap &lt;dbl&gt; 779.4, 820.9, 853.1, 836.2, 740.0, 786.1, 978.0, 852.4, 649.~</code></pre>
+</div>
+<div id="summarise-and-summarise_at" class="section level3">
+<h3>summarise() and summarise_at()</h3>
+<p>Just grouping by variables is useless. We need to do something to those grouped variables.</p>
+<p>One useful thing we can to is to <em>summarise</em> particular values of the grouped variable. In this case, we have grouped by country. Looking at the structure of the data frame, we can guess that we have information about life expectancy, population and gdp per capita for various years.</p>
+<p>Let’s suppose we want to find out the mean population of countries. We can get that by using summarise(), as follows:</p>
+<pre class="r"><code>gap %&gt;% summarise(meanPop = mean(pop)) %&gt;% head()
+# A tibble: 6 x 2
+  country       meanPop
+  &lt;fct&gt;           &lt;dbl&gt;
+1 Afghanistan 15823715.
+2 Albania      2580249.
+3 Algeria     19875406.
+4 Angola       7309390.
+5 Argentina   28602240.
+6 Australia   14649312.</code></pre>
+<p>We get the value <em>per country</em> because we already grouped by countries.</p>
+<p>Instead of adding a new column, suppose we just want the mean values, but don’t mind retaining the old name, we can use <em>summarise_at()</em>. This summarises the value <em>at</em> a particular variable – in the following case, at <strong>pop</strong>.</p>
+<pre class="r"><code>gap %&gt;% summarise_at(&#39;pop&#39;,mean) %&gt;% head()
+# A tibble: 6 x 2
+  country           pop
+  &lt;fct&gt;           &lt;dbl&gt;
+1 Afghanistan 15823715.
+2 Albania      2580249.
+3 Algeria     19875406.
+4 Angola       7309390.
+5 Argentina   28602240.
+6 Australia   14649312.</code></pre>
+<p><strong>Important:</strong> <em>remember that you should only use grouping if the variable that you want to group is either a categorical variable or a discrete variable without too many unique values</em>.</p>
+<p>You should not try to use <em>population</em> in the above example as a grouping variable.</p>
+</div>
+<div id="mutate" class="section level3">
+<h3>mutate()</h3>
+<p>mutate() allows you to add a new column to your data frame that is generally based on an existing column.</p>
+<p>In the gapminder example, suppose you want to add an additional variable, <em>popType</em> that categorizes countries by population size. To do this, you would want to the <em>cut</em> command from base R to divide the population into five different groups</p>
+<pre class="r"><code>cut(gap$pop, 5, labels = seq(5))
+# 1st argument: what we want to cut
+# 2nd argument: number of categories we want
+# 3rd argument: names of those categories (the number of names should be equal to the number of categories)</code></pre>
+<p>Now lets create the variable <em>popType</em> in our data frame. We are using data masking here (where?)</p>
+<pre class="r"><code>gap &lt;- gap %&gt;% 
+  mutate(popType = cut(pop, 5, labels = seq(5)))</code></pre>
+<p>We see we have an additional column, which is categorical.</p>
+<pre class="r"><code>head(gap)
+# A tibble: 6 x 7
+# Groups:   country [1]
+  country     continent  year lifeExp      pop gdpPercap popType
+  &lt;fct&gt;       &lt;fct&gt;     &lt;int&gt;   &lt;dbl&gt;    &lt;int&gt;     &lt;dbl&gt; &lt;fct&gt;  
+1 Afghanistan Asia       1952    28.8  8425333      779. 1      
+2 Afghanistan Asia       1957    30.3  9240934      821. 1      
+3 Afghanistan Asia       1962    32.0 10267083      853. 1      
+4 Afghanistan Asia       1967    34.0 11537966      836. 1      
+5 Afghanistan Asia       1972    36.1 13079460      740. 1      
+6 Afghanistan Asia       1977    38.4 14880372      786. 2      </code></pre>
+</div>
+<div id="arrange" class="section level3">
+<h3>arrange()</h3>
+<p>We use arrange() to order rows of a data frame by the values of the selected columns.</p>
+<p>arrange() largely ignores grouping, and that is the default behavior. The following will arrange <em>mtcars</em> by ascending values of <em>cyl</em>.</p>
+<pre class="r"><code>arrange(mtcars, cyl)</code></pre>
+<p>If you want to arrange by descending values, use as in the following:</p>
+<pre class="r"><code>arrange(mtcars, desc(cyl))[1:10,]
+                     mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+Hornet Sportabout   18.7   8 360.0 175 3.15 3.440 17.02  0  0    3    2
+Duster 360          14.3   8 360.0 245 3.21 3.570 15.84  0  0    3    4
+Merc 450SE          16.4   8 275.8 180 3.07 4.070 17.40  0  0    3    3
+Merc 450SL          17.3   8 275.8 180 3.07 3.730 17.60  0  0    3    3
+Merc 450SLC         15.2   8 275.8 180 3.07 3.780 18.00  0  0    3    3
+Cadillac Fleetwood  10.4   8 472.0 205 2.93 5.250 17.98  0  0    3    4
+Lincoln Continental 10.4   8 460.0 215 3.00 5.424 17.82  0  0    3    4
+Chrysler Imperial   14.7   8 440.0 230 3.23 5.345 17.42  0  0    3    4
+Dodge Challenger    15.5   8 318.0 150 2.76 3.520 16.87  0  0    3    2
+AMC Javelin         15.2   8 304.0 150 3.15 3.435 17.30  0  0    3    2</code></pre>
+<p>If you have grouped variables, you need to specify, by using <em>.by_group = TRUE</em> in the argument.</p>
+<p>The following code combines different dplyr verbs and shows you that the best year for Afghanistan in terms of gdp per capita was 1982, following by 2007.</p>
+<pre class="r"><code>gap %&gt;% 
+  arrange(desc(gdpPercap), .by_group = TRUE) %&gt;%
+  filter(country == &#39;Afghanistan&#39;)
+# A tibble: 12 x 7
+# Groups:   country [1]
+   country     continent  year lifeExp      pop gdpPercap popType
+   &lt;fct&gt;       &lt;fct&gt;     &lt;int&gt;   &lt;dbl&gt;    &lt;int&gt;     &lt;dbl&gt; &lt;fct&gt;  
+ 1 Afghanistan Asia       1982    39.9 12881816      978. 1      
+ 2 Afghanistan Asia       2007    43.8 31889923      975. 5      
+ 3 Afghanistan Asia       1962    32.0 10267083      853. 1      
+ 4 Afghanistan Asia       1987    40.8 13867957      852. 2      
+ 5 Afghanistan Asia       1967    34.0 11537966      836. 1      
+ 6 Afghanistan Asia       1957    30.3  9240934      821. 1      
+ 7 Afghanistan Asia       1977    38.4 14880372      786. 2      
+ 8 Afghanistan Asia       1952    28.8  8425333      779. 1      
+ 9 Afghanistan Asia       1972    36.1 13079460      740. 1      
+10 Afghanistan Asia       2002    42.1 25268405      727. 4      
+11 Afghanistan Asia       1992    41.7 16317921      649. 2      
+12 Afghanistan Asia       1997    41.8 22227415      635. 3      </code></pre>
+</div>
+</div>

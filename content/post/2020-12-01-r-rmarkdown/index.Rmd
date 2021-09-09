@@ -3,18 +3,200 @@ title: "Intro to dplyr"
 author: "Manish Gyawali"
 date: 2020-12-01T21:13:14-05:00
 categories: ["R"]
-tags: ["R Markdown", "plot", "regression"]
+tags: ["R Markdown", "tidyverse", "dplyr","tidyr"]
+
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE)
+knitr::opts_chunk$set(collapse = TRUE,
+                      comment = "",
+                      message = FALSE,
+                      warning = FALSE)
 ```
 
-```{r}
-library(dplyr)
-```
+Tidyverse is a 'meta package' in R that contains a set of packages that have a similar philosophy and can be used together. 
+
+The most important package is *dplyr*, which is used to transform data frames to useable formats
+
+Other important packages are:
+
+*purrr* for **functional programming** (it provides important alternatives to lapply)
+
+*tidyr* for converting data frames into so called *tidy* structures. We will see one such structure. 
+
+*ggplot2* for graphics
+
+We will focus here on dplyr and tidyr: 
+
+Let's get the libraries. We won't get the full tidyverse meta-package, just the two we want which are inside it. 
 
 ```{r}
-head(mtcars)
+library(dplyr);library(tidyr)
 ```
+
+
+## dplyr
+
+### Subsetting data frames:
+
+In base R, we know two ways to get subsets of data frames: 
+
+Indirectly, using *which()*. Remember that this command gives you the index numbers where the command is true. 
+
+For example, the following line gives you all those index numbers for which it is true that value of *mpg* in the **mtcars** dataset is greater than the average value in the dataset. 
+
+```{r}
+which(mtcars$mpg > mean(mtcars$mpg))
+```
+
+To get the actual data set where this is true, we need to put this condition inside the data set itself. The last comma indicates that we want the *rows* where this condition is true. 
+
+```{r}
+mtcars[which(mtcars$mpg > mean(mtcars$mpg)),]
+```
+The second method is *subset()* and this is more direct. It can be done in one step. 
+
+```{r}
+subset(mtcars, mpg > mean(mpg))
+```
+With *subset()*, you can also get the **columns** that you want: suppose we only want *mpg*, *hp* and *drat*. 
+
+Use **select** to select the columns that you want. 
+
+```{r}
+subset(mtcars, mpg > mean(mpg),
+       select = c(mpg,hp,drat)) %>%
+  head()
+```
+With *subset()*, you do not have to write mtcars$... inside the command. Just write the name of the variable that you are interested in. That attribute is called **data masking** and is very common in dplyr(). 
+
+### filter() and select()
+
+We can use filter() and select(), which are part of dplyr, in place of select. 
+
+Why not use subset? Because, although it is very easy to use, you cannot use piping properly with it. 
+
+subset() is part of base R, and piping doesn't work very well with base R. Of course, you can use piping with base R, and we already did here. 
+
+Now let's see how we can use the same type of this (as with subset()) with filter() and select() from dplyr:
+
+filter() obtains the rows of interest. It is similar to the first part of subset(). 
+
+Note that we used piping. 
+
+```{r}
+mtcars %>%
+  filter(mpg > mean(mpg))
+```
+
+Now to get columns (the second part of subset())
+
+```{r}
+mtcars %>%
+  select(mpg,hp,drat) %>%
+  head()
+```
+You can combine filter() and select() in any way. Remember to use identical(x,y) to check if two data frames x and y are *exactly* equal. 
+
+```{r}
+identical(
+  # we select columns first and then filter the rows
+  mtcars %>%
+  select(mpg,hp,drat) %>%
+    filter(mpg > mean(mpg)),
+  # we filter rows first and then select the columns
+  mtcars %>%
+    filter(mpg > mean(mpg)) %>%
+    select(mpg,hp,drat)
+)
+```
+
+### group_by()
+
+With this command, we can do operations by 'group'. For example, suppose we have a data set of country characteristics and we want to group by country: 
+```{r}
+# This 'gapminder' package set contains a data set called 'gapminder' that has country characteristics. Get this data set and store it in the  variable 'gap'
+gap <- gapminder::gapminder
+gap <- gap %>% group_by(country)
+```
+
+If you look at the structure of *gap* it won't look that different. Except there you are told that it is grouped. 
+
+```{r}
+# glimpse() is the dplyr equivalent of str() and the main advantage is that it gives tidier format
+glimpse(gap)
+```
+### summarise() and summarise_at()
+
+Just grouping by variables is useless. We need to do something to those grouped variables.
+
+One useful thing we can to is to *summarise* particular values of the grouped variable. In this case, we have grouped by country. Looking at the structure of the data frame, we can guess that we have information about life expectancy, population and gdp per capita for various years. 
+
+Let's suppose we want to find out the mean population of countries. We can get that by using summarise(), as follows: 
+
+```{r}
+gap %>% summarise(meanPop = mean(pop)) %>% head()
+```
+We get the value *per country* because we already grouped by countries. 
+
+Instead of adding a new column, suppose we just want the mean values, but don't mind retaining the old name, we can use *summarise_at()*. This summarises the value *at* a particular variable -- in the following case, at **pop**. 
+
+```{r}
+gap %>% summarise_at('pop',mean) %>% head()
+```
+**Important:** *remember that you should only use grouping if the variable that you want to group is either a categorical variable or a discrete variable without too many unique values*. 
+
+You should not try to use *population* in the above example as a grouping variable. 
+
+### mutate()
+
+mutate() allows you to add a new column to your data frame that is generally based on an existing column. 
+
+In the gapminder example, suppose you want to add an additional variable, *popType* that categorizes countries by population size. To do this, you would want to the *cut* command from base R to divide the population into five different groups
+
+```{r,eval=FALSE}
+cut(gap$pop, 5, labels = seq(5))
+# 1st argument: what we want to cut
+# 2nd argument: number of categories we want
+# 3rd argument: names of those categories (the number of names should be equal to the number of categories)
+```
+
+Now lets create the variable *popType* in our data frame. We are using data masking here (where?)
+
+```{r}
+gap <- gap %>% 
+  mutate(popType = cut(pop, 5, labels = seq(5)))
+```
+
+We see we have an additional column, which is categorical. 
+
+```{r}
+head(gap)
+```
+
+### arrange()
+
+We use arrange() to order rows of a data frame by the values of the selected columns. 
+
+arrange() largely ignores grouping, and that is the default behavior. The following will arrange *mtcars* by ascending values of *cyl*. 
+
+```{r, eval=FALSE}
+arrange(mtcars, cyl)
+```
+If you want to arrange by descending values, use as in the following: 
+
+```{r}
+arrange(mtcars, desc(cyl))[1:10,]
+```
+
+If you have grouped variables, you need to specify, by using *.by_group = TRUE* in the argument. 
+
+The following code combines different dplyr verbs and shows you that the best year for Afghanistan in terms of gdp per capita was 1982, following by 2007. 
+
+```{r}
+gap %>% 
+  arrange(desc(gdpPercap), .by_group = TRUE) %>%
+  filter(country == 'Afghanistan')
+```
+
 
